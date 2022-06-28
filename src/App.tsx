@@ -1,25 +1,26 @@
-import React, {useEffect, useReducer, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useReducer} from 'react';
 import './App.css';
 import {ethers} from "ethers";
 import HeroesToken from "./HeroesToken.json";
-import {HeroImage} from './heroes/HeroImage';
+import {FilterComponent} from "./filter/FilterComponent";
+import {FilteredHeroes} from "./filter/FilteredHeroes";
+import {IHero} from "./heroes/HeroPage";
 
-let provider: ethers.providers.JsonRpcProvider, signer, contract: ethers.Contract;
-
-const createProviderAndSigner = () => {
-    provider = new ethers.providers.JsonRpcProvider("https://api.avax-test.network/ext/bc/C/rpc");
-    signer = provider.getSigner();
-}
-const createContract = () => {
+let contract: ethers.Contract;
+let web3provider: ethers.providers.Web3Provider;
+const createProviderAndContract = () => {
+    // let provider = new ethers.providers.JsonRpcProvider("https://api.avax-test.network/ext/bc/C/rpc");
+    // @ts-ignore
+    web3provider = new ethers.providers.Web3Provider(window.ethereum);
+    // signer = web3provider.getSigner();
     const iface = new ethers.utils.Interface(HeroesToken);
-    contract = new ethers.Contract("0x9e3F28C3c37ac77684730e223aa7c0621a206CD6", iface, provider);
+    contract = new ethers.Contract("0x9e3F28C3c37ac77684730e223aa7c0621a206CD6", iface, web3provider);
 }
-
 
 function getTokenData(id: string) {
     return new Promise((resolve, reject) => {
         contract.tokenURI(id).then((uri: string) => {
-            const result = fetch(uri).then((tokenData: any) => tokenData.json()).then(data => {
+            fetch(uri).then((tokenData: any) => tokenData.json()).then(data => {
                 resolve(data);
             });
         }).catch((error: any) => {
@@ -29,8 +30,7 @@ function getTokenData(id: string) {
 
 }
 
-
-const tokenReducer = (state: Map<number, any>, action: any): Map<number, any> => {
+const tokenReducer = (state: Map<number, IHero>, action: any): Map<number, IHero> => {
     switch (action.type) {
         case "bulk_add":
             action.payload.forEach((data: any) => {
@@ -44,26 +44,9 @@ const tokenReducer = (state: Map<number, any>, action: any): Map<number, any> =>
             return new Map(state);
         default:
             return new Map(state);
-            break;
     }
 }
-
-
 const initState = new Map<number, any>();
-
-
-const filterableAttributes = [
-    {trait_type: 'rarity'},
-    {trait_type: 'name'},
-    {trait_type: 'class'},
-    {trait_type: 'tendency'},
-    {display_type: 'number', trait_type: 'generation'},
-    {display_type: 'number', trait_type: 'level'},
-    {display_type: 'number', trait_type: 'attack'},
-    {display_type: 'number', trait_type: 'defense'},
-    {display_type: 'number', trait_type: 'endurance'},
-    {display_type: 'number', trait_type: 'item_slots'}];
-
 const filterReducer = (state: Map<string, any>, action: any): Map<string, any> => {
     switch (action.type) {
         case "add":
@@ -76,17 +59,17 @@ const filterReducer = (state: Map<string, any>, action: any): Map<string, any> =
     }
 }
 
-const filterByAttributes = (tokensData: Map<number, any>, filterMap: Map<string, any>) => {
+const filterByAttributes = (tokensData: Map<number, IHero>, filterMap: Map<string, any>) => {
     const filteredOutData = new Map(tokensData);
     Array.from(filterMap.entries()).forEach(filter => {
         const [filterKey, filterValue] = filter;
         Array.from(tokensData.entries()).forEach(entry => {
             entry[1].attributes.forEach((attribute: any) => {
-                if(attribute.display_type!=="number"){
-                    if ( attribute.trait_type === filterKey && !attribute.value.includes(filterValue)) {
+                if (attribute.display_type !== "number") {
+                    if (attribute.trait_type === filterKey && !attribute.value.includes(filterValue)) {
                         filteredOutData.delete(entry[0]);
                     }
-                }else{
+                } else {
                     if (attribute.trait_type === filterKey && attribute.value.toString() !== filterValue) {
                         filteredOutData.delete(entry[0]);
                     }
@@ -95,36 +78,12 @@ const filterByAttributes = (tokensData: Map<number, any>, filterMap: Map<string,
         });
     });
     return filteredOutData;
-
 }
 
 function App() {
     const [tokensData, dispatchTokensData] = useReducer(tokenReducer, initState);
-    const [filterMap, dispatchFilterMap] = useReducer(filterReducer, new Map<string, any>);
-
-    const filterData = (event: any) => {
-        if (event.target.value != "") {
-            dispatchFilterMap({payload: event.target.value, type: "add", trait_type: event.target.id});
-        } else {
-            dispatchFilterMap({type: "remove", trait_type: event.target.id});
-        }
-    }
-
-
-    const filterComponent = () => {
-        return filterableAttributes.map(
-            attribute => <>
-                <span>{attribute.trait_type} </span>
-                <input id={attribute.trait_type} key={attribute.trait_type} title={attribute.trait_type}
-                       type={attribute.display_type ?? "text"} onChange={filterData}/>
-            </>
-        )
-
-    }
-
-    useEffect(createProviderAndSigner, []);
-    useEffect(createContract, []);
-
+    const [filterMap, dispatchFilterMap] = useReducer(filterReducer, new Map<string, any>());
+    useEffect(createProviderAndContract, []);
     useEffect(() => {
         let heroesData: any[] = [];
         let getTokenPromises: Promise<any>[] = [];
@@ -137,18 +96,20 @@ function App() {
             dispatchTokensData({type: "bulk_add", payload: heroesData});
         });
     }, []);
-    const filteredData = filterByAttributes(tokensData, filterMap);
-    let displayedImages: { id: number, image: string }[] = [];
-    if (filteredData) {
-        displayedImages = Array.from(filteredData.entries())
-            .map(entry => entry[1] && {id: entry[0], image: entry[1].image});
+    const changeFilterMap = (event: any) => {
+        if (event.target.value !== "") {
+            dispatchFilterMap({payload: event.target.value, type: "add", trait_type: event.target.id});
+        } else {
+            dispatchFilterMap({type: "remove", trait_type: event.target.id});
+        }
     }
-    ;
+    const filteredData = useMemo(() => filterByAttributes(tokensData, filterMap), [tokensData, filterMap]);
+    const displayedImages: IHero[] = useMemo(() => filteredData ? Array.from(filteredData.entries())
+        .map(entry => entry[1] && entry[1]) : [], [filteredData]);
     return (
         <div className="App">
-            {filterComponent()}
-
-            <div>{displayedImages.map(entry => <HeroImage key={entry.id.toString()} imageURL={entry.image}/>)}</div>
+            <FilterComponent changeFilterMap={changeFilterMap}/>
+            <FilteredHeroes displayedImages={displayedImages}/>
         </div>);
 }
 
