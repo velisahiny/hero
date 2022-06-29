@@ -5,7 +5,6 @@ import {HeroPage} from "../heroes/HeroPage";
 export const MainRouter = () => {
 
     return <BrowserRouter>
-
         <Routes>
             <Route path={"/"} element={<App/>}></Route>
             <Route path={"hero"}>

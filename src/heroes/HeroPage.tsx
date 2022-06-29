@@ -1,5 +1,11 @@
 import {useParams} from "react-router-dom";
-
+import {asyncGetTokenData} from "../utils/requests";
+import {useContract} from "../utils/customHooks";
+import {useEffect, useState} from "react";
+import {HeroCard} from "./HeroCard";
+import {Spinner} from "react-bootstrap";
+import {HeroTable} from "./HeroTable";
+import {HeroAttributeTable} from "./HeroAttributeTable";
 
 export interface IHeroAttribute {
     trait_type: string;
@@ -34,6 +40,19 @@ export interface IHero {
 }
 
 export const HeroPage = () => {
+    const contract = useContract();
     const params = useParams();
-    return <div> HeroID: {params.heroID}</div>
+    const [hero, setHero] = useState<IHero>();
+    useEffect(() => {
+        asyncGetTokenData(contract, params.heroID as string, (hero: IHero) => {
+            setHero(hero);
+        })
+    }, []);
+    return (
+        hero ? <>
+            <HeroCard hero={hero}/>
+            <HeroTable hero={hero}/>
+            <HeroAttributeTable attributes={hero.attributes}/>
+        </> : <Spinner animation="border" variant="primary"/>);
+
 }
