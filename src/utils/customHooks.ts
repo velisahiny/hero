@@ -1,25 +1,8 @@
 import {ethers} from "ethers";
 import HeroesToken from "../HeroesToken.json";
-import detectEthereumProvider from "@metamask/detect-provider";
-
+import {provider} from "../routes/Main";
 let contract: ethers.Contract;
 let web3provider: ethers.providers.Web3Provider;
-let provider: any;
-
-export async function detectMetaMaskProvider(callback?: (available:boolean) => void) {
-    if (provider) {
-        callback?.(true);
-        return;
-    }
-    provider = await detectEthereumProvider();
-    if (provider) {
-        callback?.(true);
-    } else {
-        console.log("Please install MetaMask!");
-        callback?.(false);
-    }
-}
-
 function createWeb3Provider() {
     web3provider = new ethers.providers.Web3Provider(provider);
     return web3provider;

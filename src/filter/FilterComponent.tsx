@@ -1,5 +1,6 @@
 import React from "react";
-import {Form, InputGroup} from "react-bootstrap";
+import { Form, InputGroup} from "react-bootstrap";
+import {DropdownFilter} from "./DropdownFilter";
 
 const filterableAttributes = [
     {trait_type: 'rarity'},
@@ -18,8 +19,14 @@ export interface IFilterComponentProps {
     changeFilterMap: (event: any) => void;
 }
 
+const heroClasses = ["gunslinger", "warrior", "mystic", "neutral"];
+const heroRarities = ["legendary", "uncommon", "common", "epic", "rare"];
+const heroTendencies= ["defensive", "offensive"];
 export const FilterComponent = (props: IFilterComponentProps) => {
     return <InputGroup size="sm" className="mb-3">
+        <DropdownFilter title={"Class"} elements={heroClasses}></DropdownFilter>
+        <DropdownFilter title={"Rarity"} elements={heroRarities}></DropdownFilter>
+        <DropdownFilter title={"Tendency"} elements={heroTendencies}></DropdownFilter>
         {filterableAttributes.map(
             attribute => <>
                 <InputGroup.Text key={attribute.trait_type + '_span'}>{attribute.trait_type} </InputGroup.Text>

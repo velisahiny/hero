@@ -39,8 +39,8 @@ function App() {
         .map(entry => entry[1] && entry[1]) : [], [filteredData]);
     return (
         <div className="App">
-            <FilterComponent changeFilterMap={changeFilterMap}/>
-            <FilteredHeroes displayedImages={displayedImages}/>
+            <FilterComponent key={"filterComponent"} changeFilterMap={changeFilterMap}/>
+            <FilteredHeroes key={"filteredHeroes"} displayedImages={displayedImages}/>
         </div>);
 }
 
