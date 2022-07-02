@@ -1,12 +1,12 @@
-import {useParams} from "react-router-dom";
+import {Link, useParams} from "react-router-dom";
 import {asyncGetTokenData} from "../utils/requests";
 import {useContract} from "../utils/customHooks";
 import {useEffect, useState} from "react";
 import {HeroCard} from "./HeroCard";
-import {Spinner} from "react-bootstrap";
+import {Col, Container, Row, Spinner} from "react-bootstrap";
 import {HeroTable} from "./HeroTable";
 import {HeroAttributeTable} from "./HeroAttributeTable";
-
+import logo from '../logo.svg';
 export interface IHeroAttribute {
     trait_type: string;
     value: string | number;
@@ -43,16 +43,27 @@ export const HeroPage = () => {
     const contract = useContract();
     const params = useParams();
     const [hero, setHero] = useState<IHero>();
+    const [attributes , setAttributes] =useState<IHeroAttribute[]>();
     useEffect(() => {
         asyncGetTokenData(contract, params.heroID as string, (hero: IHero) => {
             setHero(hero);
+            const _attributes = [...hero.attributes];
+            setAttributes(_attributes.filter(attr=>attr.trait_type!=='name'));
         })
     }, []);
-    return (
-        hero ? <>
-            <HeroCard hero={hero}/>
-            <HeroTable hero={hero}/>
-            <HeroAttributeTable attributes={hero.attributes}/>
-        </> : <Spinner animation="border" variant="primary"/>);
+    return (hero && attributes ? <Container fluid>
+        <Row>
+            <Link to={"/"}>{<img title={"Go to Main Page"} alt={"Go to Main Page"} src={logo} width={50} height={50} /> }</Link>
+        </Row>
+        <Row>
+            <Col xl={3}>
+                <HeroCard hero={hero} showDescription={true}/>
+            </Col>
+            <Col xl={9}>
+                <HeroTable hero={hero}/>
+                <HeroAttributeTable attributes={attributes}/>
+            </Col>
+        </Row>
+    </Container> : <Spinner animation="border" variant="primary"/>);
 
 }

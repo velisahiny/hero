@@ -1,12 +1,9 @@
-import React from "react";
-import { Form, InputGroup} from "react-bootstrap";
+import React, {useEffect, useState} from "react";
+import {Form, InputGroup} from "react-bootstrap";
 import {DropdownFilter} from "./DropdownFilter";
 
 const filterableAttributes = [
-    {trait_type: 'rarity'},
     {trait_type: 'name'},
-    {trait_type: 'class'},
-    {trait_type: 'tendency'},
     {display_type: 'number', trait_type: 'generation'},
     {display_type: 'number', trait_type: 'level'},
     {display_type: 'number', trait_type: 'attack'},
@@ -16,17 +13,30 @@ const filterableAttributes = [
 
 
 export interface IFilterComponentProps {
-    changeFilterMap: (event: any) => void;
+    changeFilterMap: (id: string, value: string | number) => void;
 }
 
 const heroClasses = ["gunslinger", "warrior", "mystic", "neutral"];
 const heroRarities = ["legendary", "uncommon", "common", "epic", "rare"];
-const heroTendencies= ["defensive", "offensive"];
+const heroTendencies = ["defensive", "offensive"];
 export const FilterComponent = (props: IFilterComponentProps) => {
+    const [heroClass, setHeroClass] = useState<string>();
+    const [heroRarity, setHeroRarity] = useState<string>();
+    const [heroTendency, setHeroTendency] = useState<string>();
+
+
+    useEffect(() => props.changeFilterMap("class", heroClass ?? ''), [heroClass]);
+    useEffect(() => props.changeFilterMap("tendency", heroTendency ?? ''), [heroTendency]);
+    useEffect(() => props.changeFilterMap("rarity", heroRarity ?? ''), [heroRarity]);
+
+    const inputChange = (event: any) => {
+        props.changeFilterMap(event.target.id, event.target.value);
+    }
+
     return <InputGroup size="sm" className="mb-3">
-        <DropdownFilter title={"Class"} elements={heroClasses}></DropdownFilter>
-        <DropdownFilter title={"Rarity"} elements={heroRarities}></DropdownFilter>
-        <DropdownFilter title={"Tendency"} elements={heroTendencies}></DropdownFilter>
+        <DropdownFilter activeElement={heroClass} onChange={setHeroClass} title={"Class"} elements={heroClasses}></DropdownFilter>
+        <DropdownFilter activeElement={heroRarity} onChange={setHeroRarity} title={"Rarity"} elements={heroRarities}></DropdownFilter>
+        <DropdownFilter activeElement={heroTendency} onChange={setHeroTendency} title={"Tendency"} elements={heroTendencies}></DropdownFilter>
         {filterableAttributes.map(
             attribute => <>
                 <InputGroup.Text key={attribute.trait_type + '_span'}>{attribute.trait_type} </InputGroup.Text>
@@ -36,7 +46,8 @@ export const FilterComponent = (props: IFilterComponentProps) => {
                     title={attribute.trait_type}
                     aria-label="Small"
                     aria-describedby="inputGroup-sizing-sm"
-                    type={attribute.display_type ?? "text"} onChange={props.changeFilterMap}/>
+                    type={attribute.display_type ?? "text"}
+                    onChange={inputChange}/>
             </>
         )}
     </InputGroup>

@@ -7,8 +7,12 @@ export const filterByAttributes = (tokensData: Map<number, IHero>, filterMap: Ma
         Array.from(tokensData.entries()).forEach(entry => {
             entry[1].attributes.forEach((attribute: any) => {
                 if (attribute.display_type !== "number") {
-                    if (attribute.trait_type === filterKey && !attribute.value.includes(filterValue)) {
-                        filteredOutData.delete(entry[0]);
+                    if (attribute.trait_type === filterKey) {
+                        if (filterKey === "name"  ) {
+                            !attribute.value.toLowerCase().includes(filterValue.toLowerCase()) && filteredOutData.delete(entry[0]);
+                        } else{
+                            attribute.value.toLowerCase() !== filterValue.toLowerCase() && filteredOutData.delete(entry[0]);
+                        }
                     }
                 } else {
                     if (attribute.trait_type === filterKey && attribute.value.toString() !== filterValue) {
